@@ -1,4 +1,4 @@
-FROM mysql:5.7
+FROM mysql:8.0
 
 RUN ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo UTC > /etc/timezone
 
