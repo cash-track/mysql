@@ -1,6 +1,7 @@
 .gitignore
 data
-start
-stop
 README.md
 LICENSE
+.bin
+.env
+Makefile

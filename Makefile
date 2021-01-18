@@ -24,7 +24,8 @@ tag:
 	docker tag $(IMAGE_DEV) $(IMAGE_LATEST)
 
 push:
-	docker push $(IMAGE_RELEASE) $(IMAGE_LATEST)
+	docker push $(IMAGE_RELEASE)
+	docker push $(IMAGE_LATEST)
 
 start:
 	mkdir -p data
