@@ -14,7 +14,7 @@ IMAGE_RELEASE=$(REPO):$(RELEASE_VERSION)
 IMAGE_DEV=$(REPO):dev
 IMAGE_LATEST=$(REPO):latest
 
-.PHONY: build tag push start stop
+.PHONY: build tag push start stop network
 
 build:
 	docker build . -t $(IMAGE_DEV) --no-cache
@@ -32,6 +32,7 @@ start:
 	docker run \
 	  --rm \
       --name $(CONTAINER_NAME) \
+      --net cash-track-local \
       -v "$(PWD)/data":/var/lib/mysql \
       -p $(DB_PORT):3306 \
       -e MYSQL_ROOT_PASSWORD=secret \
@@ -43,3 +44,6 @@ start:
 
 stop:
 	docker stop $(CONTAINER_NAME)
+
+network:
+	docker network create --driver bridge cash-track-local || true
