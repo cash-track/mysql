@@ -92,7 +92,7 @@ jobs:
               --rm \
               --name ${{ env.CONTAINER_NAME }} \
               --net host \
-              -v ${{ env.WORKDIR }}/data:/var/lib/mysql
+              -v ${{ env.WORKDIR }}/data:/var/lib/mysql \
               -e MYSQL_DATABASE="${{ env.MYSQL_DATABASE }}" \
               -e MYSQL_USER="${{ env.MYSQL_USER }}" \
               -e MYSQL_PASSWORD="${{ env.MYSQL_PASSWORD }}" \
