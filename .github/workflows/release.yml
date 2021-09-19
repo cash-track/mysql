@@ -90,6 +90,7 @@ jobs:
             docker stop ${{ env.CONTAINER_NAME }}
             docker run -d \
               --rm \
+              --cap-add=sys_nice \
               --name ${{ env.CONTAINER_NAME }} \
               --net host \
               -v ${{ env.WORKDIR }}/data:/var/lib/mysql \
