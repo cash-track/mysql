@@ -1,7 +1,8 @@
-# Trying to use latest build to check if "Packets out of order" bug is fixed.
+# Periodic "Packets out of order" bug.
+# Temporary downgrading build to 8.0.23. Awaiting for 8.0.27+.
 #
 # See: https://bugs.php.net/bug.php?id=81335&edit=1
-FROM mysql:8.0.26
+FROM mysql:8.0.23
 
 RUN ln -snf /usr/share/zoneinfo/UTC /etc/localtime && echo UTC > /etc/timezone
 
