@@ -6,8 +6,10 @@ on:
 
 env:
   REPO: cashtrack/mysql
-  CONTAINER_NAME: cashtrack_mysql
-  WORKDIR: /var/www/cash-track.app/mysql
+  INFRA_REPO: cash-track/infra
+  INFRA_REPO_REF: main
+  CLUSTER: k8s-cash-track
+  NAMESPACE: cash-track
 
 jobs:
   build:
@@ -59,6 +61,21 @@ jobs:
       packages: write
 
     steps:
+      - name: Checkout infra repository
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          ref: ${{ env.INFRA_REPO_REF }}
+          path: deploy
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Configure kubectl
+        run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 ${{ env.CLUSTER }}
+
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata
@@ -70,32 +87,19 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
 
-      # Execute deployment script on the server
-      # https://github.com/appleboy/ssh-action
-      - name: Deploy
-        uses: appleboy/ssh-action@master
+      - name: Update deployment
         env:
           IMAGE: ${{ env.REPO }}:${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
-          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
-          MYSQL_USER: ${{ secrets.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
-        with:
-          host: ${{ secrets.PRODUCTION_SSH_HOST }}
-          username: ${{ secrets.PRODUCTION_SSH_USER }}
-          key: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ env.WORKDIR }}
-            docker pull ${{ env.IMAGE }}
-            docker stop ${{ env.CONTAINER_NAME }}
-            docker run -d \
-              --rm \
-              --cap-add=sys_nice \
-              --name ${{ env.CONTAINER_NAME }} \
-              --net host \
-              -v ${{ env.WORKDIR }}/data:/var/lib/mysql \
-              -e MYSQL_DATABASE="${{ env.MYSQL_DATABASE }}" \
-              -e MYSQL_USER="${{ env.MYSQL_USER }}" \
-              -e MYSQL_PASSWORD="${{ env.MYSQL_PASSWORD }}" \
-              -e MYSQL_ROOT_PASSWORD="${{ env.MYSQL_ROOT_PASSWORD }}" \
-              ${{ env.IMAGE }}
+        run: sed -i 's|${{ env.REPO }}:latest|'${IMAGE}'|' $GITHUB_WORKSPACE/deploy/services/mysql/statefulset.yml
+
+      - name: Verify declaration
+        run: cat $GITHUB_WORKSPACE/deploy/services/mysql/statefulset.yml
+
+      - name: Deploy
+        run: kubectl apply -f $GITHUB_WORKSPACE/deploy/services/mysql/
+
+      - name: Verify deployment
+        run: kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/mysql
+
+      - name: Verify service ready
+        run: kubectl -n ${{ env.NAMESPACE }} wait pods -l app=mysql --for condition=Ready --timeout=30s
