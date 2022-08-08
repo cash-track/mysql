@@ -92,11 +92,11 @@ jobs:
           IMAGE: ${{ env.REPO }}:${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
         run: sed -i 's|${{ env.REPO }}:latest|'${IMAGE}'|' $GITHUB_WORKSPACE/deploy/services/mysql/statefulset.yml
 
-      - name: Verify declaration
-        run: cat $GITHUB_WORKSPACE/deploy/services/mysql/statefulset.yml
+      - name: Update definition
+        run: kubectl apply -f $GITHUB_WORKSPACE/deploy/services/mysql/
 
       - name: Deploy
-        run: kubectl apply -f $GITHUB_WORKSPACE/deploy/services/mysql/
+        run: kubectl -n ${{ env.NAMESPACE }} delete pod mysql-0
 
       - name: Verify deployment
         run: kubectl -n ${{ env.NAMESPACE }} rollout status statefulset/mysql
