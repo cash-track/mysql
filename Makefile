@@ -17,7 +17,7 @@ IMAGE_LATEST=$(REPO):latest
 .PHONY: build tag push start stop network
 
 build:
-	docker build . -t $(IMAGE_DEV) --no-cache
+	docker build . -t $(IMAGE_DEV) --no-cache --platform linux/amd64
 
 tag:
 	docker tag $(IMAGE_DEV) $(IMAGE_RELEASE)
@@ -29,7 +29,7 @@ push:
 
 start:
 	mkdir -p data
-	docker run \
+	[[ "$(shell docker container inspect -f '{{.State.Running}}' $(CONTAINER_NAME))" == "true" ]] || docker run \
 	  --rm \
       --name $(CONTAINER_NAME) \
       --net cash-track-local \
@@ -39,6 +39,7 @@ start:
       -e MYSQL_DATABASE=$(DB_NAME) \
       -e MYSQL_USER=$(DB_USER) \
       -e MYSQL_PASSWORD=$(DB_PASS) \
+      --platform linux/amd64 \
       -d \
       $(IMAGE_DEV)
 
